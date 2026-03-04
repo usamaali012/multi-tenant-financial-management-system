@@ -465,7 +465,7 @@ Rollback (if needed)
 ## About the Author
 
 **Usama Ali** — Full-Stack Engineer  
-📍 Pakistan · Available for remote contracts
+📍 Pakistan
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/usamaali012)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:usamaali012@gmail.com)
