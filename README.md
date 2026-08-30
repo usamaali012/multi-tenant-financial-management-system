@@ -1,6 +1,6 @@
-# Multi-Tenant Fintech Platform — System Architecture
+# Multi-Tenant Financial Management System — System Architecture
 
-> **Note:** This repository contains no application code. It is an architecture reference document describing the system design, technical decisions, and infrastructure of a production multi-tenant financial SaaS platform I built as Lead Full-Stack Engineer.
+> **Note:** This repository contains no application code. It is an architecture reference document describing the system design, technical decisions, and infrastructure of a production multi-tenant financial management platform I built as Lead Full-Stack Engineer.
 
 ---
 
@@ -23,14 +23,15 @@
 
 ## Project Summary
 
-A production multi-tenant SaaS platform for financial operations — built solo from architecture through deployment. The platform manages capital history, expense workflows, manager charges, closings, and real-time financial reporting for enterprise clients in the fund management space.
+A production multi-tenant SaaS platform for financial record-keeping and reporting, built solo from architecture through deployment. The platform manages capital history, expense workflows, manager charges, closings, and real-time financial reporting for enterprise clients.
+
+The system records and reports on financial activity. It does not process payments or move money.
 
 | Attribute | Detail |
 |---|---|
 | Type | Multi-tenant B2B SaaS |
 | Tenants | 5–6 enterprise clients |
 | Users | 200–300 active users per tenant |
-| Transaction volume | ~50 financial transactions/month/tenant |
 | Uptime since launch | 99%+ · zero unplanned downtime |
 | Build model | Solo engineer — architecture to production |
 
@@ -108,7 +109,7 @@ The platform uses a **separate PostgreSQL database per tenant** — the strictes
 | Separate schema | Medium — schema-level isolation | Medium | Medium |
 | **Separate database** ✅ | **Hard — infrastructure-level isolation** | **Low** | **Higher** |
 
-For a financial platform, shared schema row-level isolation was ruled out immediately. A single missing filter in a query, a misconfigured ORM relationship, or a junior developer's mistake could expose one client's financial data to another. With separate databases, that class of bug is architecturally impossible.
+For a platform holding client financial records, shared schema row-level isolation was ruled out immediately. A single missing filter in a query, a misconfigured ORM relationship, or a junior developer's mistake could expose one client's financial data to another. With separate databases, that class of bug is architecturally impossible.
 
 **Tenant routing:**
 ```
@@ -196,7 +197,7 @@ Request
   │      → 403 if insufficient → request never reaches handler
   │
   ├─ 2. Service layer: business logic checks ownership and resource-level permissions
-  │      → Cannot approve your own transactions, cannot access other tenant data
+  │      → Cannot approve your own records, cannot access other tenant data
   │
   └─ 3. Angular frontend: role-aware rendering
          → Action buttons, menu items, and data columns hidden for unauthorized roles
@@ -218,7 +219,7 @@ Roles are stored per-tenant in the database, not hardcoded — administrators ca
 ### Architecture
 
 ```
-Financial Event Occurs (e.g. transaction flagged)
+Financial Record Event Occurs (e.g. entry flagged for review)
         │
         ▼
   Service Layer publishes event to Redis channel
@@ -250,7 +251,7 @@ On disconnect/logout → connection deregistered, resources cleaned up
 
 **Tenant isolation:** Each tenant's WebSocket connections are managed in a separate Redis key namespace. There is no mechanism by which a message intended for Tenant A could be delivered to a Tenant B session.
 
-**Result:** Admin response time to flagged financial events dropped from several minutes to under 10 seconds.
+**Result:** Admin response time to flagged records dropped from several minutes to under 10 seconds.
 
 ---
 
@@ -294,7 +295,7 @@ app/
 │   └── interceptors/   # HTTP auth headers, error handling, loading state
 ├── features/
 │   ├── dashboard/      # KPI cards, summary widgets, trend charts
-│   ├── capital/        # Capital history, transactions, closings
+│   ├── capital/        # Capital history, entries, closings
 │   ├── expenses/       # Expense management, approvals, categories
 │   ├── reports/        # Parameterized report builder and viewer
 │   ├── notifications/  # Real-time notification centre (WebSocket consumer)
@@ -320,7 +321,7 @@ app/
 ### Schema Principles
 
 **1. Append-only financial records**
-No committed financial transaction is ever hard-deleted or updated in place. All changes create a new versioned record:
+No committed financial record is ever hard-deleted or updated in place. All changes create a new versioned record:
 ```
 capital_transactions
 ├── id
@@ -451,7 +452,6 @@ Rollback (if needed)
 |---|---|
 | Active tenants | 5–6 enterprise clients |
 | Users per tenant | 200–300 |
-| Transactions per tenant/month | ~50 financial transactions |
 | API response time (p95) | < 200ms |
 | Frontend Lighthouse score | 99 |
 | Real-time alert latency | < 10 seconds (was: several minutes) |
